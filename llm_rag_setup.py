@@ -45,20 +45,22 @@ ensemble_retriever = EnsembleRetriever(
 
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=GEMINI_API_KEY)
 
-
+'''
 CUSTOM_PROMPT = PromptTemplate(
     template="""
-    Yalnızca aşağıdaki belgelerde verilen bilgilere dayanarak soruyu yanıtlayın.
-    Eğer belgeler yeterli değilse "Bu konuda yeterli bilgi bulunamadı." deyin.
+    Aşağıdaki belgelerde verilen bilgilere dayanarak soruyu yalnızca Türkçe yanıtlayın.
+    Eğer belgeler soruyu yanıtlamak için yeterli değilse, sadece şu cümleyi yazın:
+    "Bu konuda yeterli bilgi bulunamadı."
 
     Belgeler:
-    {context}
+    {context_str}
 
     Soru: {question}
-    Kesin ve maddeler halinde yanıt:
+
+    Lütfen cevabı kesin ve noktalı maddeler halinde, açık ve sade Türkçe ile yazın:
     """,
-    input_variables=["context", "question"],
-)
+    input_variables=["context_str", "question"],
+)'''
 
 
 qa_chain = RetrievalQA.from_chain_type(
@@ -66,8 +68,10 @@ qa_chain = RetrievalQA.from_chain_type(
     retriever=ensemble_retriever,
     chain_type="refine",
     verbose=True,
-    # chain_type_kwargs={"prompt": CUSTOM_PROMPT},
 )
+"""chain_type_kwargs={
+    "question_prompt": CUSTOM_PROMPT
+},  # refine -> question prompt / refine prompt"""
 
 result = qa_chain.invoke(
     {"query": "Araç alım ve satım işlemlerinde hangi kimlikler/belgeler istenir?"}
