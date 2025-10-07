@@ -92,6 +92,10 @@ class TNBGenelgeProcessor:
         return maddeler
 
     def create_chunks(self, genelge: Dict) -> List[GenelgeChunk]:
+        """
+        Create chunks with hierarchical context preservation.
+        Each chunk includes genelge title and madde context for better retrieval.
+        """
         chunks = []
         maddeler = self.parse_genelge_maddeleri(genelge["icerik"])
 
@@ -100,6 +104,15 @@ class TNBGenelgeProcessor:
             alt_chunks = self.split_madde_content(madde["icerik"])
 
             for i, chunk_content in enumerate(alt_chunks):
+                # HIERARCHICAL CONTEXT: Prepend genelge and madde info
+                # This dramatically improves retrieval accuracy by preserving context
+                hierarchical_content = self._create_hierarchical_content(
+                    genelge_no=genelge['no'],
+                    genelge_baslik=genelge['baslik'],
+                    madde_no=madde['madde_no'],
+                    chunk_content=chunk_content
+                )
+                
                 chunk_id = hashlib.md5(
                     f"{genelge['no']}-{madde['madde_no']}-{i}-{chunk_content[:50]}".encode()
                 ).hexdigest()[:12]
@@ -111,19 +124,47 @@ class TNBGenelgeProcessor:
                     baslik=genelge["baslik"],
                     madde_no=madde["madde_no"],
                     alt_madde=f"Bölüm {i+1}" if len(alt_chunks) > 1 else "",
-                    icerik=chunk_content,
+                    icerik=hierarchical_content,  # Use hierarchical content instead of raw content
                     full_path=full_path,
                     chunk_id=chunk_id,
                 )
                 chunks.append(chunk)
 
         return chunks
+    
+    def _create_hierarchical_content(
+        self, 
+        genelge_no: int, 
+        genelge_baslik: str, 
+        madde_no: str, 
+        chunk_content: str
+    ) -> str:
+        """
+        Create hierarchical content that includes context for better retrieval.
+        Format: [Genelge Info] > [Madde Info] > [Content]
+        """
+        # Build hierarchical structure
+        hierarchical = f"GENELGE NO {genelge_no}: {genelge_baslik}\n"
+        hierarchical += f"Madde {madde_no}\n"
+        hierarchical += f"---\n"
+        hierarchical += chunk_content
+        
+        return hierarchical
 
-    def split_madde_content(self, content: str, max_length: int = 500) -> List[str]:
+    def split_madde_content(
+        self, 
+        content: str, 
+        max_length: int = 1500,  # Increased from 500 to 1500
+        overlap: int = 200  # Added overlap for context preservation
+    ) -> List[str]:
+        """
+        Split content into chunks with overlap for better context preservation.
+        Optimized for legal documents with improved chunking strategy.
+        """
         if len(content) <= max_length:
             return [content]
 
-        # Alt maddelere göre böl
+        # Try to split on alt madde boundaries first
         alt_madde_pattern = r"([a-z]+\)|[çğıöşüÇĞIİÖŞÜ]+\))"
         parts = re.split(alt_madde_pattern, content)
 
@@ -136,14 +177,42 @@ class TNBGenelgeProcessor:
             else:
                 part = parts[i]
 
+            # Check if adding this part would exceed max_length
             if len(current_chunk + part) <= max_length:
                 current_chunk += part
             else:
                 if current_chunk:
                     chunks.append(current_chunk.strip())
-                current_chunk = part
+                    # Add overlap from the end of current chunk
+                    if len(current_chunk) > overlap:
+                        current_chunk = current_chunk[-overlap:] + part
+                    else:
+                        current_chunk = part
+                else:
+                    # Part itself is too long, split by sentences
+                    sentences = re.split(r'([.!?]\s+)', part)
+                    temp_chunk = ""
+                    for j in range(0, len(sentences), 2):
+                        if j + 1 < len(sentences):
+                            sentence = sentences[j] + sentences[j + 1]
+                        else:
+                            sentence = sentences[j]
+                        
+                        if len(temp_chunk + sentence) <= max_length:
+                            temp_chunk += sentence
+                        else:
+                            if temp_chunk:
+                                chunks.append(temp_chunk.strip())
+                                temp_chunk = sentence
+                            else:
+                                # Even single sentence is too long, force split
+                                chunks.append(sentence[:max_length].strip())
+                                temp_chunk = sentence[max_length:]
+                    
+                    if temp_chunk:
+                        current_chunk = temp_chunk
 
-        if current_chunk:
+        if current_chunk.strip():
             chunks.append(current_chunk.strip())
 
         return chunks if chunks else [content]

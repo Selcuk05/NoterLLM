@@ -8,13 +8,19 @@ wheels/
 
 # Virtual environments
 .venv
+venv/
 
 # Extracted content
-*.txt
-*.json
+extracted.txt
+tnb_genelgeler_rag.json
 
 # Index files
-faiss_index
+faiss_index/
+bm25_retriever.pkl
 
 # Dotenv
 .env
+
+# OS files
+.DS_Store
+Thumbs.db
