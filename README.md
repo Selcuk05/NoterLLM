@@ -67,21 +67,6 @@ python llm_rag_setup.py
 streamlit run app.py
 ```
 
-### Komut Satırı
-```bash
-# İnteraktif mod
-python query.py
-
-# Tek soru
-python query.py -q "Araç satış işlemlerinde hangi belgeler gereklidir?"
-
-# Toplu soru işleme
-python query.py -b example_questions.txt
-
-# Sistem istatistikleri
-python query.py --stats
-```
-
 ## 📚 Veri Kaynakları
 
 - **Noterlik Kanunu (1512)**: 213 madde, ~228 chunk
@@ -91,9 +76,108 @@ python query.py --stats
 ## 🔍 Teknik Detaylar
 
 - **Embedding Model**: `intfloat/multilingual-e5-base` (768 dim, Türkçe destekli)
-- **LLM**: Gemini 1.5 Flash (Temperature: 0.3)
+- **LLM**: Gemini Flash Latest (Temperature: 0.3)
 - **Retrieval**: Ensemble (FAISS + BM25, Top-K: 5)
 - **Chunking**: 1500 karakter, 200 overlap
+
+## 🏗️ Sistem Mimarisi
+
+```mermaid
+graph TB
+    subgraph "📁 Veri Kaynakları"
+        PDF1[📄 Noterlik Kanunu PDF<br/>213 madde]
+        PDF2[📄 TNB Genelgeler PDF<br/>125+ genelge]
+    end
+
+    subgraph "🔍 1. Ekstraksiyon"
+        EXT1[extract_kanun.py<br/>PyPDF Okuma]
+        EXT2[extract.py<br/>PyPDF Okuma]
+        TXT1[kanun_extracted.txt<br/>Raw Text]
+        TXT2[extracted.txt<br/>Raw Text]
+    end
+
+    subgraph "⚙️ 2. İşleme & Chunking"
+        PROC1[process_kanun.py<br/>Madde Parsing<br/>Hiyerarşik Chunking]
+        PROC2[process.py<br/>Genelge Parsing<br/>Hiyerarşik Chunking]
+        JSON1[noterlik_kanunu_rag.json<br/>~228 chunks]
+        JSON2[tnb_genelgeler_rag.json<br/>~24,000 chunks]
+    end
+
+    subgraph "🧠 3. RAG Sistemi Setup"
+        SETUP[llm_rag_setup.py]
+        EMB[Embedding Model<br/>multilingual-e5-base<br/>768 dim]
+        FAISS[(FAISS Index<br/>Semantic Search)]
+        BM25[(BM25 Index<br/>Keyword Search)]
+        ENS[Ensemble Retriever<br/>Weights: 0.5/0.5]
+    end
+
+    subgraph "🤖 LLM Layer"
+        LLM[Gemini Flash Latest<br/>Temperature: 0.3]
+        PROMPT[Custom Prompt<br/>Turkish Legal Expert]
+        CHAIN[RetrievalQA Chain]
+    end
+
+    subgraph "💻 Kullanıcı Arayüzü"
+        WEB[🌐 app.py<br/>Streamlit Web UI]
+    end
+
+    subgraph "👤 Kullanıcı"
+        USER[Kullanıcı Sorusu]
+    end
+
+    subgraph "📊 Yanıt"
+        ANS[AI Yanıtı + Kaynaklar<br/>Madde No + Referanslar]
+    end
+
+    %% Veri Akışı
+    PDF1 --> EXT1 --> TXT1 --> PROC1 --> JSON1
+    PDF2 --> EXT2 --> TXT2 --> PROC2 --> JSON2
+    
+    JSON1 --> SETUP
+    JSON2 --> SETUP
+    
+    SETUP --> EMB
+    EMB --> FAISS
+    SETUP --> BM25
+    
+    FAISS --> ENS
+    BM25 --> ENS
+    
+    ENS --> CHAIN
+    LLM --> CHAIN
+    PROMPT --> CHAIN
+    
+    CHAIN --> WEB
+    USER --> WEB
+    WEB --> ANS
+    
+    %% API Bağlantısı
+    GEMINI[☁️ Google Gemini API] -.-> LLM
+
+    %% Stil
+    classDef pdfStyle fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef processStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef indexStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef llmStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef uiStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    
+    class PDF1,PDF2 pdfStyle
+    class EXT1,EXT2,PROC1,PROC2 processStyle
+    class FAISS,BM25,ENS indexStyle
+    class LLM,CHAIN,PROMPT llmStyle
+    class WEB uiStyle
+```
+
+### Mimari Akış Açıklaması
+
+1. **📥 Veri Girişi**: PDF formatındaki Noterlik Kanunu ve TNB Genelgeleri sisteme yüklenir
+2. **🔍 Ekstraksiyon**: PyPDF ile PDF'lerden düz metin çıkarılır
+3. **⚙️ İşleme**: Metinler maddelere ayrılır ve 1500 karakter chunklar halinde yapılandırılır (200 karakter overlap)
+4. **🧠 Vektörizasyon**: Her chunk Türkçe destekli embedding model ile vektöre dönüştürülür
+5. **🗂️ İndeksleme**: FAISS (semantic) ve BM25 (keyword) ile çift indeks oluşturulur
+6. **🔍 Retrieval**: Kullanıcı sorusu geldiğinde ensemble retriever ile en ilgili 5 chunk bulunur
+7. **🤖 LLM İşleme**: Gemini Flash, bulunan chunklar ve özel prompt ile yanıt üretir
+8. **📊 Sunum**: Kaynak referansları ile birlikte Streamlit arayüzünde kullanıcıya sunulur
 
 ## 🐛 Sorun Giderme
 

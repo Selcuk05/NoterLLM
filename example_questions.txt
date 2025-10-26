@@ -1,6 +1,20 @@
-Araç satış işlemlerinde hangi belgeler gereklidir?
-Noter harcı nasıl hesaplanır?
-Vekaletname düzenleme şartları nelerdir?
-Kimlik belgesi olarak hangi belgeler kabul edilir?
-Noterlik işlemlerinde kullanılabilecek yabancı kimlik belgeleri nelerdir?
+Basit Seviye (Genel Bilgi Sorguları)
+- Noterde vekaletname çıkarmak için hangi belgeler gerekir?
+- Noter çalışma saatleri resmi olarak nedir?
+- Ehliyet yenileme için noter işlem ücreti ödenir mi?
+- Noterde imza beyannamesi kaç dakikada çıkar?
+- Noterde para transferi işlemi yapılır mı?
 
+Orta Seviye (Standart İşlem Senaryoları)
+- Araç satışını noterde yapmak için satıcı ve alıcıda hangi belgeler olmak zorunda?
+- Bir şirket adına noter vekaleti düzenlenecekse kim imza atar?
+- Noterde düzenlenen gayrimenkul satış vaadi sözleşmesinin geçerlilik süresi nedir?
+- Noter onaylı tercüme için tercümanın hangi şartları taşıması gerekir?
+- Yurt dışı için kullanılacak vekaletnamenin apostil işlemi nasıl yapılır?
+
+İleri Seviye (Hukuki Terminoloji ve İçerik Arama Testleri)
+- Bunlar, sistemin içerisindeki mevzuat/örnek sözleşme/uygulama kılavuzlarını tarayıp kesin bilgi getirmesini test eder.
+- İşlemden kaçınma tutanağı hangi şartlarda düzenlenir ve hangi maddelere dayanır?
+- Miras intikalinde noter hangi belgeleri talep eder ve işlem ücreti nasıl hesaplanır?
+- Ticaret sicil yetki belgesinin noter tasdiki için yönetmelikte belirtilen zorunlu ifadeler nelerdir?
+- Limited şirket genel kurul kararının noter onayında içeriğin hangi maddeleri zorunludur?
