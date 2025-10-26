@@ -2,7 +2,7 @@ import pypdf
 
 
 def extract_kanun():
-    reader = pypdf.PdfReader("Noterlik_Kanunu.pdf")
+    reader = pypdf.PdfReader("documents/Noterlik_Kanunu.pdf")
 
     page_count = len(reader.pages)
     extracted = ""

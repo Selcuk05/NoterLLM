@@ -2,7 +2,7 @@ import pypdf
 
 
 def extract_content():
-    reader = pypdf.PdfReader("Birlestirilmis_Genelgeler.pdf")
+    reader = pypdf.PdfReader("documents/Birlestirilmis_Genelgeler.pdf")
 
     page_count = len(reader.pages)
     extracted = ""
