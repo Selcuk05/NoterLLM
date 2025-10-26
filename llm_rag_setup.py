@@ -18,7 +18,6 @@ from rich.panel import Panel
 import sys
 
 
-# Configuration: Choose your LLM backend
 USE_LOCAL_LLM = os.getenv("USE_LOCAL_LLM", "false").lower() == "true"
 
 if not USE_LOCAL_LLM:
@@ -33,27 +32,45 @@ if not USE_LOCAL_LLM:
         sys.exit(1)
 
 
-# Load documents
+documents = []
+
 try:
     with open("tnb_genelgeler_rag.json", "r", encoding="utf-8") as f:
-        data = json.load(f)
-    print(f"✅ Loaded {len(data)} chunks from tnb_genelgeler_rag.json")
+        genelge_data = json.load(f)
+    print(f"✅ Loaded {len(genelge_data)} chunks from tnb_genelgeler_rag.json")
+    
+    for item in genelge_data:
+        # Ensure metadata has source_type for genelge
+        if "source_type" not in item["metadata"]:
+            item["metadata"]["source_type"] = "genelge"
+        documents.append(Document(page_content=item["content"], metadata=item["metadata"]))
+    
 except FileNotFoundError:
-    print("❌ tnb_genelgeler_rag.json not found. Please run process.py first.")
+    print("⚠️  tnb_genelgeler_rag.json not found. Please run process.py first.")
+
+try:
+    with open("noterlik_kanunu_rag.json", "r", encoding="utf-8") as f:
+        kanun_data = json.load(f)
+    print(f"✅ Loaded {len(kanun_data)} chunks from noterlik_kanunu_rag.json")
+    
+    for item in kanun_data:
+        documents.append(Document(page_content=item["content"], metadata=item["metadata"]))
+    
+except FileNotFoundError:
+    print("⚠️  noterlik_kanunu_rag.json not found. Please run extract_kanun.py and process_kanun.py first.")
+
+if not documents:
+    print("❌ No documents loaded. Please prepare data files first.")
     sys.exit(1)
 
-documents = [
-    Document(page_content=item["content"], metadata=item["metadata"]) for item in data
-]
+print(f"📚 Total documents loaded: {len(documents)}")
 
-# Initialize embedding model with optimized batch size
 print("🔄 Initializing embedding model...")
 embedding_model = HuggingFaceEmbeddings(
     model_name="intfloat/multilingual-e5-base",
     encode_kwargs={'batch_size': 32}
 )
 
-# Load or create FAISS vector store (PERFORMANCE OPTIMIZATION)
 faiss_index_path = "faiss_index"
 if os.path.exists(faiss_index_path):
     print(f"✅ Loading existing FAISS index from {faiss_index_path}...")
@@ -69,7 +86,6 @@ else:
     vector_db.save_local(faiss_index_path)
     print(f"✅ FAISS index created and saved to {faiss_index_path}")
 
-# Load or create BM25 retriever (PERFORMANCE OPTIMIZATION)
 bm25_path = "bm25_retriever.pkl"
 if os.path.exists(bm25_path):
     print(f"✅ Loading existing BM25 index from {bm25_path}...")
@@ -79,21 +95,18 @@ if os.path.exists(bm25_path):
 else:
     print(f"🔄 Creating new BM25 index...")
     bm25_retriever = BM25Retriever.from_documents(documents)
-    bm25_retriever.k = 5  # Set k to match FAISS retriever
+    bm25_retriever.k = 5
     with open(bm25_path, "wb") as f:
         pickle.dump(bm25_retriever, f)
     print(f"✅ BM25 index created and saved to {bm25_path}")
 
-# Configure retrievers
 vector_retriever = vector_db.as_retriever(search_kwargs={"k": 5})
 
-# Ensemble retriever combining semantic and keyword search
 ensemble_retriever = EnsembleRetriever(
     retrievers=[bm25_retriever, vector_retriever], 
     weights=[0.5, 0.5]
 )
 
-# Initialize LLM
 if USE_LOCAL_LLM:
     print("🔄 Initializing Local LLM (Ollama)...")
     llm = Ollama(
@@ -110,25 +123,26 @@ else:
     )
     print("✅ Gemini LLM initialized")
 
-# Custom prompt template for Turkish legal domain (ACCURACY IMPROVEMENT)
-turkish_legal_prompt = """Sen Türk Noter Hukuku konusunda uzman bir yapay zeka asistanısın. Görevin, Türkiye Noterler Birliği genelgelerinden ve genel hukuk bilginden yararlanarak kullanıcının sorusunu doğru ve eksiksiz yanıtlamaktır.
+turkish_legal_prompt = """Sen Türk Noter Hukuku konusunda uzman bir yapay zeka asistanısın. Görevin, Noterlik Kanunu ve Türkiye Noterler Birliği genelgelerinden yararlanarak kullanıcının sorusunu doğru ve eksiksiz yanıtlamaktır.
 
-BAĞLAM BİLGİLERİ (Genelgelerden):
+BAĞLAM BİLGİLERİ (Kanun ve Genelgelerden):
 {context}
 
 KULLANICI SORUSU: {question}
 
 YANITLAMA STRATEJİSİ:
-1. **ÖNCE**: Yukarıdaki genelgelerde soruyla ilgili bilgi var mı kontrol et
-   - Varsa: Genelge bilgilerini kullan ve mutlaka kaynak belirt (Genelge no + Madde no)
-   - Yoksa veya yetersizse: Genel hukuk bilgini kullanarak yardımcı ol
+1. **KAYNAK ÖNCELİĞİ**: 
+   - Noterlik Kanunu → Temel yasal çerçeve ve genel kurallar
+   - TNB Genelgeleri → Kanunun uygulanmasına ilişkin özel düzenlemeler ve açıklamalar
+   - Her iki kaynağı da kontrol et ve ilgili olanları kullan
 
 2. **HİBRİT YANITLAMA**: 
-   - Genelgelerdeki özel bilgiler varsa bunları ÖNCELİKLE kullan
-   - Temel/genel sorular için (örn: "Noter nedir?", "Vekaletname ne demek?") genel bilgini kullan
-   - Her iki kaynaktan da yararlanabilirsin, ancak hangisini kullandığını belirt
+   - Kanun maddeleri varsa bunları temel al
+   - Genelgelerdeki uygulama detayları varsa ekle
+   - Kaynak belirtmeyi unutma!
 
 3. **KAYNAK BELİRTME**:
+   - Kanundan alınan bilgi → "Noterlik Kanunu Madde X'e göre..."
    - Genelgelerden alınan bilgi → "Genelge X, Madde Y'ye göre..."
    - Genel bilgi → "Genel olarak..." veya "Türk Hukuku'nda..."
 
@@ -136,7 +150,7 @@ YANITLAMA STRATEJİSİ:
    - Yanıtını net, anlaşılır ve yapılandırılmış şekilde sun
    - Hukuki terminolojiyi doğru kullan
    - Kesin olmadığın konularda varsayımda bulunma
-   - Genelgelerde bilgi yoksa bunu saklamak yerine genel bilgiyle yardımcı ol
+   - Hem kanunu hem genelgeleri kaynak olarak kullanabilirsin
 
 YANITINIZ:"""
 
@@ -145,7 +159,6 @@ prompt_template = PromptTemplate(
     input_variables=["context", "question"]
 )
 
-# Create QA chain with optimized settings (ACCURACY & PERFORMANCE IMPROVEMENT)
 qa_chain = RetrievalQA.from_chain_type(
     llm=llm,
     retriever=ensemble_retriever,
@@ -162,7 +175,6 @@ print("✅ RAG system initialized successfully!\n")
 
 
 def query_rag(question: str):
-    """Query the RAG system and display results with sources"""
     console = Console()
     
     console.print(Panel(f"[bold cyan]Soru:[/bold cyan] {question}", expand=False))
@@ -180,8 +192,22 @@ def query_rag(question: str):
             console.print("[bold yellow]Kaynaklar:[/bold yellow]")
             for i, doc in enumerate(result["source_documents"][:3], 1):
                 metadata = doc.metadata
-                console.print(f"{i}. Genelge {metadata.get('genelge_no')} - Madde {metadata.get('madde_no')}")
-                console.print(f"   {metadata.get('genelge_baslik', 'N/A')}")
+                source_type = metadata.get('source_type', 'genelge')
+                
+                if source_type == 'kanun':
+                    madde_no = metadata.get('madde_no', 'N/A')
+                    madde_baslik = metadata.get('madde_baslik', '')
+                    title = f"{i}. Noterlik Kanunu - Madde {madde_no}"
+                    if madde_baslik:
+                        title += f" ({madde_baslik})"
+                    console.print(title)
+                    kisim = metadata.get('kisim', '')
+                    if kisim:
+                        console.print(f"   {kisim}")
+                else:
+                    console.print(f"{i}. Genelge {metadata.get('genelge_no')} - Madde {metadata.get('madde_no')}")
+                    console.print(f"   {metadata.get('genelge_baslik', 'N/A')}")
+                
                 console.print(f"   {doc.page_content[:150]}...\n")
         
         return result
@@ -191,7 +217,5 @@ def query_rag(question: str):
         return None
 
 
-# Main execution
 if __name__ == "__main__":
-    # Example query
     result = query_rag("Araç satış işlemlerinde hangi belgeler gereklidir?")

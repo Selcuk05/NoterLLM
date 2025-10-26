@@ -12,7 +12,9 @@ venv/
 
 # Extracted content
 extracted.txt
+kanun_extracted.txt
 tnb_genelgeler_rag.json
+noterlik_kanunu_rag.json
 
 # Index files
 faiss_index/

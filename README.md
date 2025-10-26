@@ -1,12 +1,13 @@
 # NoterLLM - Türk Noter Hukuku RAG Sistemi
 
-Türkiye Noterler Birliği genelgelerine dayalı AI destekli soru-cevap sistemi. Retrieval-Augmented Generation (RAG) teknolojisi ile doğru ve kaynak referanslı yanıtlar sunar.
+Noterlik Kanunu ve Türkiye Noterler Birliği genelgelerine dayalı AI destekli soru-cevap sistemi. Retrieval-Augmented Generation (RAG) teknolojisi ile doğru ve kaynak referanslı yanıtlar sunar.
 
 ## 🚀 Özellikler
 
+- **Çoklu Kaynak Desteği**: Noterlik Kanunu (1512) + TNB Genelgeleri
 - **Hibrit Retrieval**: FAISS (semantic search) + BM25 (keyword search)
-- **Hiyerarşik Chunking**: Her chunk genelge ve madde bilgisi içerir
-- **Kaynak Referansları**: Her yanıtta genelge ve madde numarası belirtilir
+- **Hiyerarşik Chunking**: Her chunk kaynak, madde ve kısım bilgisi içerir
+- **Kaynak Referansları**: Her yanıtta kanun/genelge madde numarası belirtilir
 - **İndeks Önbellekleme**: İlk çalıştırmadan sonra 95% daha hızlı başlatma
 - **Web Arayüzü**: Streamlit ile modern kullanıcı deneyimi
 
@@ -33,14 +34,27 @@ echo "GEMINI_API_KEY=your-api-key-here" > .env
 
 Projeyi kullanmaya başlamadan önce sırasıyla şu adımları izleyin:
 
+### Genelgeleri Hazırlama
 ```bash
-# 1. PDF'den metin çıkar
+# 1. Genelge PDF'den metin çıkar
 python extract.py
 
 # 2. Metni işle ve chunklara ayır
 python process.py
+```
 
-# 3. FAISS ve BM25 indekslerini oluştur
+### Noterlik Kanununu Hazırlama
+```bash
+# 1. Kanun PDF'den metin çıkar
+python extract_kanun.py
+
+# 2. Kanunu işle ve chunklara ayır
+python process_kanun.py
+```
+
+### RAG Sistemini Başlatma
+```bash
+# 3. FAISS ve BM25 indekslerini oluştur (her iki kaynak için)
 python llm_rag_setup.py
 ```
 
@@ -67,6 +81,12 @@ python query.py -b example_questions.txt
 # Sistem istatistikleri
 python query.py --stats
 ```
+
+## 📚 Veri Kaynakları
+
+- **Noterlik Kanunu (1512)**: 213 madde, ~228 chunk
+- **TNB Genelgeleri**: 125+ genelge, ~24.000 chunk
+- **Toplam**: ~24.200+ chunk ile zengin bilgi tabanı
 
 ## 🔍 Teknik Detaylar
 

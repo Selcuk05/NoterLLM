@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 st.title("⚖️ NoterLLM - Türk Noter Hukuku Asistanı")
-st.markdown("Türkiye Noterler Birliği genelgelerine dayalı AI destekli soru-cevap sistemi")
+st.markdown("Noterlik Kanunu ve TNB Genelgelerine dayalı AI destekli soru-cevap sistemi")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -40,8 +40,24 @@ if prompt := st.chat_input("Sorunuzu yazın..."):
                     with st.expander("📚 Kaynaklar"):
                         for i, doc in enumerate(result["source_documents"][:3], 1):
                             metadata = doc.metadata
-                            title = f"{i}. Genelge {metadata.get('genelge_no')} - Madde {metadata.get('madde_no')}"
-                            content = f"{metadata.get('genelge_baslik', 'N/A')}\n\n{doc.page_content[:200]}..."
+                            source_type = metadata.get('source_type', 'genelge')
+                            
+                            # Kaynak tipine göre başlık oluştur
+                            if source_type == 'kanun':
+                                madde_no = metadata.get('madde_no', 'N/A')
+                                madde_baslik = metadata.get('madde_baslik', '')
+                                title = f"{i}. Noterlik Kanunu - Madde {madde_no}"
+                                if madde_baslik:
+                                    title += f" ({madde_baslik})"
+                                kisim = metadata.get('kisim', '')
+                                content = f"{kisim}\n\n{doc.page_content[:200]}..."
+                            else:
+                                genelge_no = metadata.get('genelge_no', 'N/A')
+                                madde_no = metadata.get('madde_no', 'N/A')
+                                title = f"{i}. Genelge {genelge_no} - Madde {madde_no}"
+                                genelge_baslik = metadata.get('genelge_baslik', 'N/A')
+                                content = f"{genelge_baslik}\n\n{doc.page_content[:200]}..."
+                            
                             st.markdown(f"**{title}**")
                             st.caption(content)
                             sources.append({"title": title, "content": content})
@@ -59,7 +75,11 @@ with st.sidebar:
     st.info("""
     **NoterLLM** Türk Noter Hukuku hakkında sorularınızı yanıtlar.
     
-    Sistem genelgeleri kullanarak doğru ve kaynak referanslı yanıtlar sunar.
+    **Kaynaklar:**
+    - 📜 Noterlik Kanunu (1512)
+    - 📋 TNB Genelgeleri
+    
+    Sistem bu kaynakları kullanarak doğru ve referanslı yanıtlar sunar.
     """)
     
     if st.button("🗑️ Sohbeti Temizle"):
