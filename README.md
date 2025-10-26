@@ -85,40 +85,40 @@ streamlit run app.py
 ```mermaid
 graph TB
     subgraph "📁 Veri Kaynakları"
-        PDF1["📄 Noterlik Kanunu PDF<br>213 madde"]
-        PDF2["📄 TNB Genelgeler PDF<br>125+ genelge"]
+        PDF1["📄 Noterlik Kanunu PDF | 213 madde"]
+        PDF2["📄 TNB Genelgeler PDF | 125+ genelge"]
     end
 
     subgraph "🔍 1. Ekstraksiyon"
-        EXT1["extract_kanun.py<br>PyPDF Okuma"]
-        EXT2["extract.py<br>PyPDF Okuma"]
-        TXT1["kanun_extracted.txt<br>Raw Text"]
-        TXT2["extracted.txt<br>Raw Text"]
+        EXT1["extract_kanun.py | PyPDF Okuma"]
+        EXT2["extract.py | PyPDF Okuma"]
+        TXT1["kanun_extracted.txt | Raw Text"]
+        TXT2["extracted.txt | Raw Text"]
     end
 
     subgraph "⚙️ 2. İşleme & Chunking"
-        PROC1["process_kanun.py<br>Madde Parsing<br>Hiyerarşik Chunking"]
-        PROC2["process.py<br>Genelge Parsing<br>Hiyerarşik Chunking"]
-        JSON1["noterlik_kanunu_rag.json<br>~228 chunks"]
-        JSON2["tnb_genelgeler_rag.json<br>~24,000 chunks"]
+        PROC1["process_kanun.py | Madde Parsing | Hiyerarşik Chunking"]
+        PROC2["process.py | Genelge Parsing | Hiyerarşik Chunking"]
+        JSON1["noterlik_kanunu_rag.json | ~228 chunks"]
+        JSON2["tnb_genelgeler_rag.json | ~24,000 chunks"]
     end
 
     subgraph "🧠 3. RAG Sistemi Setup"
         SETUP["llm_rag_setup.py"]
-        EMB["Embedding Model<br>multilingual-e5-base<br>768 dim"]
-        FAISS[("FAISS Index<br>Semantic Search")]
-        BM25[("BM25 Index<br>Keyword Search")]
-        ENS["Ensemble Retriever<br>Weights: 0.5/0.5"]
+        EMB["Embedding Model | multilingual-e5-base | 768 dim"]
+        FAISS[("FAISS Index | Semantic Search")]
+        BM25[("BM25 Index | Keyword Search")]
+        ENS["Ensemble Retriever | Weights: 0.5/0.5"]
     end
 
     subgraph "🤖 LLM Layer"
-        LLM["Gemini Flash Latest<br>Temperature: 0.3"]
-        PROMPT["Custom Prompt<br>Turkish Legal Expert"]
+        LLM["Gemini Flash Latest | Temperature: 0.3"]
+        PROMPT["Custom Prompt | Turkish Legal Expert"]
         CHAIN["RetrievalQA Chain"]
     end
 
     subgraph "💻 Kullanıcı Arayüzü"
-        WEB["🌐 app.py<br>Streamlit Web UI"]
+        WEB["🌐 app.py | Streamlit Web UI"]
     end
 
     subgraph "👤 Kullanıcı"
@@ -126,7 +126,7 @@ graph TB
     end
 
     subgraph "📊 Yanıt"
-        ANS["AI Yanıtı + Kaynaklar<br>Madde No + Referanslar"]
+        ANS["AI Yanıtı + Kaynaklar | Madde No + Referanslar"]
     end
 
     %% Veri Akışı
