@@ -83,6 +83,7 @@ streamlit run app.py
 ## 🏗️ Sistem Mimarisi
 
 ```mermaid
+%%{ init : { "theme" : "default", "themeVariables" : { "background" : "#000" }}}%%
 graph TB
     subgraph "📁 Veri Kaynakları"
         PDF1["📄 Noterlik Kanunu PDF | 213 madde"]
