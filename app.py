@@ -17,6 +17,8 @@ custom_css = """
     margin: 10px 0;
     border-left: 4px solid #2196F3;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+    max-width: 100%;
 }
 .source-box * {
     color: #2c3e50 !important;
@@ -26,12 +28,17 @@ custom_css = """
     margin-bottom: 10px;
     font-size: 1.1em;
     color: #1a73e8 !important;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 .source-content {
     font-size: 0.95em;
     line-height: 1.6;
     white-space: pre-wrap;
-    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
+    overflow-x: auto;
 }
 .sources-header {
     color: #1a73e8;
@@ -40,6 +47,37 @@ custom_css = """
     margin: 20px 0 15px 0;
     padding-bottom: 8px;
     border-bottom: 2px solid #1a73e8;
+}
+.sources-details {
+    margin-top: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0;
+    background-color: #f8f9fa;
+}
+.sources-details summary {
+    cursor: pointer;
+    padding: 12px 15px;
+    font-weight: 600;
+    font-size: 1.1em;
+    color: #1a73e8;
+    background-color: #f0f4f8;
+    border-radius: 8px;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+.sources-details summary:hover {
+    background-color: #e3eaf0;
+}
+.sources-details[open] summary {
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 10px;
+}
+.sources-container {
+    padding: 10px 15px 15px 15px;
+    max-width: 100%;
+    overflow: hidden;
 }
 .footer {
     text-align: center;
@@ -51,7 +89,7 @@ custom_css = """
 
 def format_sources(source_documents):
     if not source_documents:
-        return "Kaynak bulunamadı."
+        return ""
 
     sources_html = ""
     for i, doc in enumerate(source_documents[:3], 1):
@@ -82,7 +120,16 @@ def format_sources(source_documents):
 </div>
 """
 
-    return sources_html
+    # Wrap sources in collapsible details element
+    return f"""
+<br>
+<details class="sources-details">
+    <summary>📚 Kaynaklar ({len(source_documents[:3])} kaynak)</summary>
+    <div class="sources-container">
+        {sources_html}
+    </div>
+</details>
+"""
 
 
 def chat_with_rag(message, history):
@@ -98,10 +145,7 @@ def chat_with_rag(message, history):
 
         sources_html = ""
         if result and "source_documents" in result and result["source_documents"]:
-            sources_html = (
-                '<br><br><div class="sources-header">📚 Kaynaklar</div>'
-                + format_sources(result["source_documents"])
-            )
+            sources_html = format_sources(result["source_documents"])
 
         full_response = answer + sources_html
         history.append((message, full_response))
@@ -178,11 +222,6 @@ with gr.Blocks(css=custom_css, theme=gr.themes.Soft()) as demo:
                 **Model:** Qwen2.5-7B-Instruct  
                 **Embedding:** multilingual-e5-base  
                 **Retrieval:** FAISS + BM25 (Hybrid)
-                
-                **Özellikler:**
-                - 🔍 Semantic & Keyword Search
-                - 📚 Kaynak Referansları
-                - 🇹🇷 Türkçe Optimizasyonu
                 """
             )
 
@@ -202,14 +241,6 @@ with gr.Blocks(css=custom_css, theme=gr.themes.Soft()) as demo:
         fn=clear_chat,
         inputs=None,
         outputs=[msg, chatbot],
-    )
-
-    gr.Markdown(
-        """
-        <div class="footer">
-            <p>Powered by HuggingFace 🤗 | Built with Gradio</p>
-        </div>
-        """
     )
 
 demo.launch()
