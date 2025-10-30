@@ -2,6 +2,8 @@
 
 Noterlik Kanunu ve Türkiye Noterler Birliği genelgelerine dayalı AI destekli soru-cevap sistemi. Retrieval-Augmented Generation (RAG) teknolojisi ile doğru ve kaynak referanslı yanıtlar sunar.
 
+![diagram](diagram.png)
+
 ## 🚀 Özellikler
 
 - **Çoklu Kaynak Desteği**: Noterlik Kanunu (1512) + TNB Genelgeleri
@@ -76,10 +78,6 @@ python app.py
 - **LLM**: Qwen2.5-7B-Instruct
 - **Retrieval**: Ensemble (FAISS + BM25, Top-K: 5)
 - **Chunking**: 1500 karakter, 200 overlap
-
-## 🏗️ Sistem Mimarisi
-
-![Sistem Mimarisi](diagram.png)
 
 ---
 
