@@ -2,6 +2,8 @@
 
 Noterlik Kanunu ve Türkiye Noterler Birliği genelgelerine dayalı AI destekli soru-cevap sistemi. Retrieval-Augmented Generation (RAG) teknolojisi ile doğru ve kaynak referanslı yanıtlar sunar.
 
+![Demo on HuggingFace Spaces](https://huggingface.co/spaces/selcukwashere/NoterLLM-Demo)
+
 ![diagram](diagram.png)
 
 ## 🚀 Özellikler
